@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Question JSON Builder</title>
+  <style>
+    body { font-family: sans-serif; margin: 2rem; }
+    input, textarea, select, button { display: block; margin: 0.5rem 0 1rem; width: 100%; max-width: 600px; padding: 0.5rem; }
+    label { font-weight: bold; margin-top: 1rem; }
+    .option-group { margin-bottom: 1rem; border: 1px solid #ccc; padding: 0.5rem; }
+    .question-box { border: 1px solid #aaa; padding: 1rem; margin-bottom: 1.5rem; background: #f9f9f9; }
+    table { width: 100%; border-collapse: collapse; margin-bottom: 2rem; }
+    th, td { border: 1px solid #ccc; padding: 0.5rem; text-align: left; }
+    th { background-color: #eee; }
+  </style>
+</head>
+<body>
+  <h1>MCQ Question Entry Tool</h1>
+
+  <table id="questionTable">
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Text</th>
+        <th>Factor</th>
+        <th>Required</th>
+        <th>Options Count</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+  <form id="questionForm">
+    <div class="question-box">
+      <label>Question Text</label>
+      <textarea id="questionText" rows="4" required></textarea>
+
+      <label>Factor</label>
+      <select id="factorId" required>
+        <option value="logical">Logical</option>
+        <option value="social">Social</option>
+        <option value="numerical">Numerical</option>
+      </select>
+
+      <label>Is Required</label>
+      <select id="isRequired">
+        <option value="true">true</option>
+        <option value="false">false</option>
+      </select>
+
+      <label>Image URL (optional)</label>
+      <input type="text" id="imageUrl" />
+
+      <h3>Options</h3>
+      <div id="optionContainer"></div>
+      <button type="button" onclick="addOption()">+ Add Option</button>
+    </div>
+
+    <button type="submit">Add Question</button>
+  </form>
+
+  <button onclick="downloadJSON()">Download JSON</button>
+
+  <pre id="output"></pre>
+
+  <script>
+    const questions = [];
+
+    const factorMap = {
+      logical: "3f4f1dd6-3290-4bdd-a4de-9ccb9b8c45c2",
+      social: "3f4f1dd6-3290-4bdd-a4de-9ccb9b8c45c2",
+      numerical: "3f4f1dd6-3290-4bdd-a4de-9ccb9b8c45c2"
+    };
+
+    function generate6DigitId() {
+      return Math.floor(100000 + Math.random() * 900000).toString();
+    }
+
+    function addOption() {
+      const container = document.getElementById("optionContainer");
+      const group = document.createElement("div");
+      group.className = "option-group";
+      const optionId = generate6DigitId();
+      group.innerHTML = `
+        <label>Option ID (auto)</label>
+        <input type="text" class="option-id" value="${optionId}" disabled />
+        <label>Label (A, B, C...)</label>
+        <input type="text" class="option-label" required />
+        <label>Option Text</label>
+        <input type="text" class="option-text" required />
+        <label>Option Value</label>
+        <input type="text" class="option-value" required />
+        <label>Option Image URL (optional)</label>
+        <input type="text" class="option-image" />
+      `;
+      container.appendChild(group);
+    }
+
+    document.getElementById("questionForm").addEventListener("submit", function (e) {
+      e.preventDefault();
+
+      const questionId = generate6DigitId();
+      const text = document.getElementById("questionText").value.trim();
+      const factorKey = document.getElementById("factorId").value;
+      const factor_id = factorMap[factorKey];
+      const isRequired = document.getElementById("isRequired").value === "true";
+      const imageUrl = document.getElementById("imageUrl").value.trim();
+
+      const options = Array.from(document.querySelectorAll(".option-group")).map(group => {
+        const id = group.querySelector(".option-id").value || generate6DigitId();
+        const label = group.querySelector(".option-label").value;
+        const text = group.querySelector(".option-text").value;
+        const value = group.querySelector(".option-value").value;
+        const imageUrl = group.querySelector(".option-image").value;
+        const option = { id, label, text, value };
+        if (imageUrl) option.imageUrl = imageUrl;
+        return option;
+      });
+
+      const question = {
+        id: questionId,
+        text,
+        type: "MCQ",
+        options,
+        factor_id,
+        isRequired
+      };
+      if (imageUrl) question.imageUrl = imageUrl;
+
+      questions.push(question);
+      appendToTable(question);
+      document.getElementById("output").textContent = JSON.stringify({ questions }, null, 2);
+
+      e.target.reset();
+      document.getElementById("optionContainer").innerHTML = "";
+    });
+
+    function appendToTable(q) {
+      const row = document.createElement("tr");
+      row.innerHTML = `
+        <td>${q.id}</td>
+        <td>${q.text}</td>
+        <td>${Object.keys(factorMap).find(key => factorMap[key] === q.factor_id)}</td>
+        <td>${q.isRequired}</td>
+        <td>${q.options.length}</td>
+      `;
+      document.querySelector("#questionTable tbody").appendChild(row);
+    }
+
+    function downloadJSON() {
+      const blob = new Blob([JSON.stringify({ questions }, null, 2)], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "questions.json";
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+  </script>
+</body>
+</html>
