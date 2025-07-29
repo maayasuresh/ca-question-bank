@@ -25,7 +25,7 @@
         <th>Text</th>
         <th>Factor</th>
         <th>Required</th>
-        <th>Options Count</th>
+        <th>Correct Answer</th>
       </tr>
     </thead>
     <tbody></tbody>
@@ -55,17 +55,21 @@
       <h3>Options</h3>
       <div id="optionContainer"></div>
       <button type="button" onclick="addOption()">+ Add Option</button>
+
+      <label>Correct Option Label (e.g., A, B, C, D)</label>
+      <input type="text" id="correctOption" maxlength="1" required />
     </div>
 
     <button type="submit">Add Question</button>
   </form>
 
-  <button onclick="downloadJSON()">Download JSON</button>
+  <button onclick="downloadJSONs()">Download JSON Files</button>
 
   <pre id="output"></pre>
 
   <script>
     const questions = [];
+    const answerKey = [];
 
     const factorMap = {
       logical: "3f4f1dd6-3290-4bdd-a4de-9ccb9b8c45c2",
@@ -106,6 +110,7 @@
       const factor_id = factorMap[factorKey];
       const isRequired = document.getElementById("isRequired").value === "true";
       const imageUrl = document.getElementById("imageUrl").value.trim();
+      const correctOption = document.getElementById("correctOption").value.trim().toUpperCase();
 
       const options = Array.from(document.querySelectorAll(".option-group")).map(group => {
         const id = group.querySelector(".option-id").value || generate6DigitId();
@@ -129,33 +134,46 @@
       if (imageUrl) question.imageUrl = imageUrl;
 
       questions.push(question);
-      appendToTable(question);
+      answerKey.push({ id: questionId, answer: correctOption, factor_id });
+
+      appendToTable(question, correctOption);
       document.getElementById("output").textContent = JSON.stringify({ questions }, null, 2);
 
       e.target.reset();
       document.getElementById("optionContainer").innerHTML = "";
     });
 
-    function appendToTable(q) {
+    function appendToTable(q, correctLabel) {
       const row = document.createElement("tr");
       row.innerHTML = `
         <td>${q.id}</td>
         <td>${q.text}</td>
         <td>${Object.keys(factorMap).find(key => factorMap[key] === q.factor_id)}</td>
         <td>${q.isRequired}</td>
-        <td>${q.options.length}</td>
+        <td>${correctLabel}</td>
       `;
       document.querySelector("#questionTable tbody").appendChild(row);
     }
 
-    function downloadJSON() {
-      const blob = new Blob([JSON.stringify({ questions }, null, 2)], { type: "application/json" });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = "questions.json";
-      a.click();
-      URL.revokeObjectURL(url);
+    function downloadJSONs() {
+      const questionBlob = new Blob([JSON.stringify({ questions }, null, 2)], { type: "application/json" });
+      const answerBlob = new Blob([JSON.stringify({ id: "epicstep-CA", title: "How You Think", answer_key: answerKey }, null, 2)], { type: "application/json" });
+
+      const questionUrl = URL.createObjectURL(questionBlob);
+      const answerUrl = URL.createObjectURL(answerBlob);
+
+      const a1 = document.createElement("a");
+      a1.href = questionUrl;
+      a1.download = "questions.json";
+      a1.click();
+
+      const a2 = document.createElement("a");
+      a2.href = answerUrl;
+      a2.download = "answers.json";
+      a2.click();
+
+      URL.revokeObjectURL(questionUrl);
+      URL.revokeObjectURL(answerUrl);
     }
   </script>
 </body>
