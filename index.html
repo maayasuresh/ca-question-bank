@@ -72,13 +72,18 @@
     const answerKey = [];
 
     const factorMap = {
-      logical: "3f4f1dd6-3290-4bdd-a4de-9ccb9b8c45c2",
-      social: "3f4f1dd6-3290-4bdd-a4de-9ccb9b8c45c2",
-      numerical: "3f4f1dd6-3290-4bdd-a4de-9ccb9b8c45c2"
+      logical: "24fe6ed2-b02e-455c-acce-6e11668d74cb",
+      social: "dd479b86-5b26-43f7-a56c-4ecb608c7fe5",
+      numerical: "df325acd-e67d-470f-9bda-9f305aa18c15"
     };
 
     function generate6DigitId() {
-      return Math.floor(100000 + Math.random() * 900000).toString();
+      const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+      let result = '';
+      for (let i = 0; i < 6; i++) {
+        result += chars.charAt(Math.floor(Math.random() * chars.length));
+      }
+      return result;
     }
 
     function addOption() {
