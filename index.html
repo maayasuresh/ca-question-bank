@@ -148,7 +148,7 @@
       row.innerHTML = `
         <td>${q.id}</td>
         <td>${q.text}</td>
-        <td>${Object.keys(factorMap).find(key => factorMap[key] === q.factor_id)}</td>
+        <td>${q.factor_id === factorMap.logical ? 'Logical' : q.factor_id === factorMap.social ? 'Social' : q.factor_id === factorMap.numerical ? 'Numerical' : 'Unknown'}</td>
         <td>${q.isRequired}</td>
         <td>${correctLabel}</td>
       `;
