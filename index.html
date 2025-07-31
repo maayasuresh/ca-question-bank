@@ -77,7 +77,7 @@
       numerical: "df325acd-e67d-470f-9bda-9f305aa18c15"
     };
 
-    function generate6DigitId() {
+    function generate6CharId() {
       const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
       let result = '';
       for (let i = 0; i < 6; i++) {
@@ -86,11 +86,15 @@
       return result;
     }
 
+    function generateUUID() {
+      return crypto.randomUUID();
+    }
+
     function addOption() {
       const container = document.getElementById("optionContainer");
       const group = document.createElement("div");
       group.className = "option-group";
-      const optionId = generate6DigitId();
+      const optionId = generate6CharId();
       group.innerHTML = `
         <label>Option ID (auto)</label>
         <input type="text" class="option-id" value="${optionId}" disabled />
@@ -109,7 +113,7 @@
     document.getElementById("questionForm").addEventListener("submit", function (e) {
       e.preventDefault();
 
-      const questionId = generate6DigitId();
+      const questionId = generate6CharId();
       const text = document.getElementById("questionText").value.trim();
       const factorKey = document.getElementById("factorId").value;
       const factor_id = factorMap[factorKey];
@@ -118,7 +122,7 @@
       const correctOption = document.getElementById("correctOption").value.trim().toUpperCase();
 
       const options = Array.from(document.querySelectorAll(".option-group")).map(group => {
-        const id = group.querySelector(".option-id").value || generate6DigitId();
+        const id = group.querySelector(".option-id").value || generate6CharId();
         const label = group.querySelector(".option-label").value;
         const text = group.querySelector(".option-text").value;
         const value = group.querySelector(".option-value").value;
@@ -150,18 +154,32 @@
 
     function appendToTable(q, correctLabel) {
       const row = document.createElement("tr");
+      const factor = Object.keys(factorMap).find(key => factorMap[key] === q.factor_id);
       row.innerHTML = `
         <td>${q.id}</td>
         <td>${q.text}</td>
-        <td>${q.factor_id === factorMap.logical ? 'Logical' : q.factor_id === factorMap.social ? 'Social' : q.factor_id === factorMap.numerical ? 'Numerical' : 'Unknown'}</td>
+        <td>${factor.charAt(0).toUpperCase() + factor.slice(1)}</td>
         <td>${q.isRequired}</td>
         <td>${correctLabel}</td>
       `;
       document.querySelector("#questionTable tbody").appendChild(row);
     }
 
+    function groupQuestionsIntoPages(questions, pageSize = 5) {
+      const pages = [];
+      for (let i = 0; i < questions.length; i += pageSize) {
+        pages.push({
+          id: generateUUID(),
+          timerInSeconds: 120,
+          questions: questions.slice(i, i + pageSize)
+        });
+      }
+      return pages;
+    }
+
     function downloadJSONs() {
-      const questionBlob = new Blob([JSON.stringify({ questions }, null, 2)], { type: "application/json" });
+      const pages = groupQuestionsIntoPages(questions);
+      const questionBlob = new Blob([JSON.stringify({ pages }, null, 2)], { type: "application/json" });
       const answerBlob = new Blob([JSON.stringify({ id: "epicstep-CA", title: "How You Think", answer_key: answerKey }, null, 2)], { type: "application/json" });
 
       const questionUrl = URL.createObjectURL(questionBlob);
