@@ -165,7 +165,7 @@
       document.querySelector("#questionTable tbody").appendChild(row);
     }
 
-    function groupQuestionsIntoPages(questions, pageSize = 5) {
+    function groupQuestionsIntoPages(questions, pageSize = 1) {
       const pages = [];
       for (let i = 0; i < questions.length; i += pageSize) {
         pages.push({
